@@ -1,3 +1,6 @@
 classname: tsdat.io.storage.FileSystem
 handler:
-  classname: tsdat.io.handlers.NetCDFHandler
+  classname: tsdat.io.handlers.SplitNetCDFHandler
+  parameters:
+    time_interval: 1
+    time_unit: "D"
