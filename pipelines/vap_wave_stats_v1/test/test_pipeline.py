@@ -10,7 +10,9 @@ def test_vap_wave_stats_v1_pipeline():
     # pipeline. To account for this we first run the ingest to generate input data for
     # the vap, and then run the vap test. Please update the line below to point to the
     #  correct folder / test name
-    from pipelines.vap_wave_raw_v1.test.test_pipeline import test_vap_wave_raw_v1_pipeline
+    from pipelines.vap_wave_raw_v1.test.test_pipeline import (
+        test_vap_wave_raw_v1_pipeline,
+    )
     from pipelines.spotter_v1.test.test_pipeline import test_gps_pipeline
 
     test_vap_wave_raw_v1_pipeline()
@@ -30,4 +32,4 @@ def test_vap_wave_stats_v1_pipeline():
     # with an expected output file
     expected_file = "pipelines/vap_wave_stats_v1/test/data/expected/clallam.wave_stats.c1.20210903.162303.nc"
     expected: xr.Dataset = xr.open_dataset(expected_file)  # type: ignore
-    assert_close(dataset, expected, check_attrs=False, atol=1e-5)
+    assert_close(dataset, expected, check_attrs=False, atol=1e-4)

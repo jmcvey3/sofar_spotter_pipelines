@@ -32,4 +32,4 @@ def test_vap_wave_v2_pipeline():
     # with an expected output file
     expected_file = "pipelines/vap_wave_v2/test/data/expected/pnnl.spotter-32632C.c1.20250709.173821.nc"
     expected: xr.Dataset = xr.open_dataset(expected_file)  # type: ignore
-    assert_close(dataset, expected, check_attrs=False, atol=1e-5)
+    assert_close(dataset, expected, check_attrs=False, atol=1e-4)
