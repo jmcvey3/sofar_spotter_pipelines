@@ -8,7 +8,6 @@ from mhkit.tidal import graphics
 from mhkit import wave, dolfyn
 from tsdat import TransformationPipeline
 
-
 fs = 2.5  # Hz, Spotter sampling frequency
 wat = 1800  # s, window averaging time
 freq_slc = [0.0455, 1]  # 22 to 1 s periods
@@ -115,14 +114,15 @@ class VapWaveStats(TransformationPipeline):
 
         # Create averaged dataset
         ds = dataset.copy()
-        mean_time = fft_tool.mean(ds["time"].values)
         # Trim time length to averaged time
-        ds = ds.isel(time=slice(None, mean_time.size))
+        ds = ds.isel(time=slice(None, len(psd["time_psd"])))
         # Set time coordinates
-        mean_time = xr.DataArray(
-            mean_time, coords={"time": mean_time}, attrs=dataset["time"].attrs
+        psd_time = xr.DataArray(
+            psd["time_psd"].values,
+            coords={"time": psd["time_psd"].values},
+            attrs=ds["time"].attrs,
         )
-        ds = ds.assign_coords({"time": mean_time})
+        ds = ds.assign_coords({"time": psd_time})
         # Slice timestamps for auxillary data
         for t in ds.coords:
             if "_" in t:
@@ -140,8 +140,8 @@ class VapWaveStats(TransformationPipeline):
         ds["wave_b1_value"].values = b1
         ds["wave_a2_value"].values = a2
         ds["wave_b2_value"].values = b2
-        ds["wave_dp"].values = direction
-        ds["wave_spread"].values = spread
+        ds["wave_dp"].values = direction.astype("float32")
+        ds["wave_spread"].values = spread.astype("float32")
 
         ds = ds.drop(("x", "y", "z"))
 

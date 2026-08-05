@@ -7,7 +7,6 @@ from mhkit import wave, dolfyn
 from cmocean.cm import amp_r, dense, haline
 from tsdat import TransformationPipeline
 
-
 fs = 2.5  # Hz, Spotter sampling frequency
 wat = 1800  # s, window averaging time
 freq_slc = [0.0455, 1]  # 22 to 1 s periods
@@ -70,14 +69,14 @@ class VapWaves(TransformationPipeline):
         slc_freq = slice(freq_slc[0], freq_slc[1])
 
         # Auto-spectra
-        psd = fft_tool.power_spectral_density(disp, freq_units="Hz")
+        psd = fft_tool.power_spectral_density(disp, freq_units="Hz", pct_overlap=0.5)
         psd = psd.sel(freq=slc_freq)
         Sxx = psd.sel(S="Sxx")
         Syy = psd.sel(S="Syy")
         Szz = psd.sel(S="Szz")
 
         # Cross-spectra
-        csd = fft_tool.cross_spectral_density(disp, freq_units="Hz")
+        csd = fft_tool.cross_spectral_density(disp, freq_units="Hz", pct_overlap=0.5)
         csd = csd.sel(coh_freq=slc_freq)
         Cxz = csd.sel(C="Cxz").real
         Cxy = csd.sel(C="Cxy").real
@@ -111,10 +110,12 @@ class VapWaves(TransformationPipeline):
         spread = phi[:, peak_idx]
 
         # Trim dataset length
-        ds = ds.isel(time=slice(None, len(psd["time"])))
+        ds = ds.isel(time=slice(None, len(psd["time_psd"])))
         # Set time coordinates
         time = xr.DataArray(
-            psd["time"], coords={"time": psd["time"]}, attrs=ds["time"].attrs
+            psd["time_psd"].values,
+            coords={"time": psd["time_psd"].values},
+            attrs=ds["time"].attrs,
         )
         ds = ds.assign_coords({"time": time})
         # Make sure mhkit vars are set to float32
@@ -129,8 +130,8 @@ class VapWaves(TransformationPipeline):
         ds["wave_b1_value"].values = b1
         ds["wave_a2_value"].values = a2
         ds["wave_b2_value"].values = b2
-        ds["wave_dp"].values = direction
-        ds["wave_spread"].values = spread
+        ds["wave_dp"].values = direction.astype("float32")
+        ds["wave_spread"].values = spread.astype("float32")
 
         return ds.drop(("x", "y", "z"))
 

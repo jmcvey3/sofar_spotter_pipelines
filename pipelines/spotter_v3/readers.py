@@ -1,5 +1,5 @@
 from typing import Dict, Union
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, ConfigDict
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -69,7 +69,9 @@ class GPSReader(DataReader):
 class SpotterRawReader(DataReader):
     """Reads raw files from spotter that don't require special edits"""
 
-    class Parameters(BaseModel, extra=Extra.forbid):
+    class Parameters(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+
         time_var: str = "time"
 
     parameters: Parameters = Parameters()

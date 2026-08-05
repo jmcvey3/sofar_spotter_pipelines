@@ -1,6 +1,5 @@
 import warnings
 from typing import Dict, Union
-from pydantic import BaseModel, Extra
 import xarray as xr
 import pandas as pd
 import numpy as np

@@ -1,6 +1,4 @@
-numpy>=2.0.0
-tsdat>=0.8.9
-cmocean
 typer
+tsdat>=0.10.0
 mhkit[dolfyn,tidal,wave]
-pandas<3.0.0
+cmocean

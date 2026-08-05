@@ -1,5 +1,5 @@
 import numpy as np
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, ConfigDict
 import xarray as xr
 from numpy.typing import NDArray
 from tsdat import QualityChecker, QualityHandler
@@ -20,7 +20,9 @@ class GoringNikora2002(QualityChecker):
 
     ----------------------------------------------------------------------------"""
 
-    class Parameters(BaseModel, extra=Extra.forbid):
+    class Parameters(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+
         n_points: int = 5000
 
     parameters: Parameters = Parameters()
@@ -56,7 +58,9 @@ class CubicSplineInterp(QualityHandler):
         The dataArray with nan's filled in
     ----------------------------------------------------------------------------"""
 
-    class Parameters(BaseModel, extra=Extra.forbid):
+    class Parameters(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+
         npt: int = 12
         method: str = "cubic"
 
