@@ -34,17 +34,17 @@ data_vars:
     .*gps.*:
       name: lat
       data_converters:
-        - classname: tsdat.transform.Interpolate
+        - classname: tsdat.transform_v2.LinearInterpolate
   lon:
     .*gps.*:
       name: lon
       data_converters:
-        - classname: tsdat.transform.Interpolate
+        - classname: tsdat.transform_v2.LinearInterpolate
   sst:
     .*sst.*:
       name: sst
       data_converters:
-        - classname: tsdat.transform.Interpolate
+        - classname: tsdat.transform_v2.LinearInterpolate
   wave_hs:
     .*wave.*: 
       name: wave_hs

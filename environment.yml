@@ -1,10 +1,8 @@
 name: spotter
 channels:
-  - arm-doe
   - conda-forge
 dependencies:
   - python>=3.11,<3.14
-  - adi_py>=3.19.2
   - hdf5
   - pytables
   - pip

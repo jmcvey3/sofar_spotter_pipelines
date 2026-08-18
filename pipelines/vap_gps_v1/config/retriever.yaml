@@ -31,9 +31,9 @@ data_vars:
     .*gps.*:
       name: lat
       data_converters:
-        - classname: tsdat.transform.BinAverage
+        - classname: tsdat.transform_v2.BinAverage
   lon:
     .*gps.*:
       name: lon
       data_converters:
-        - classname: tsdat.transform.BinAverage
+        - classname: tsdat.transform_v2.BinAverage

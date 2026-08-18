@@ -26,7 +26,7 @@ data_vars:
     .*:
       name: Example
       data_converters:
-        - classname: tsdat.transform.BinAverage
+        - classname: tsdat.transform_v2.BinAverage
         - classname: tsdat.io.converters.UnitsConverter
           input_units: km
 
