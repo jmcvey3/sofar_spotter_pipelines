@@ -10,7 +10,8 @@ from tsdat import TransformationPipeline
 
 fs = 2.5  # Hz, Spotter sampling frequency
 wat = 1800  # s, window averaging time
-freq_slc = [0.0455, 1]  # 22 to 1 s periods
+fft_decimation = 6  # 1/fraction of bin length for FFT vector
+freq_slc = [0.0455, 0.333]  # 22 to 3 s periods
 
 
 class VapWaveStats(TransformationPipeline):
@@ -24,11 +25,11 @@ class VapWaveStats(TransformationPipeline):
 
         # Need to write in frequency and direction coordinates that will be used later
         # Create FFT frequency vector
-        nfft = fs * wat // 6
+        nfft = fs * wat // fft_decimation
         f = np.fft.fftfreq(int(nfft), 1 / fs)
         # Use only positive frequencies
         freq = np.abs(f[1 : int(nfft / 2.0 + 1)])
-        # Trim frequency vector to > 0.0455 Hz (wave periods between 1 and 22 s)
+        # Trim frequency vector
         freq = freq[np.where((freq > freq_slc[0]) & (freq <= freq_slc[1]))]
         directions = np.arange(0, 360, 10).astype("float32")
 
@@ -66,20 +67,23 @@ class VapWaveStats(TransformationPipeline):
         ## Using dolfyn to create spectra
         nbin = fs * wat
         fft_tool = dolfyn.adv.api.ADVBinner(
-            n_bin=nbin, fs=fs, n_fft=nbin // 6, n_fft_coh=nbin // 6
+            n_bin=nbin,
+            fs=fs,
+            n_fft=nbin // fft_decimation,
+            n_fft_coh=nbin // fft_decimation,
         )
         # Trim frequency vector to > 0.0455 Hz (wave periods smaller than 22 s)
         slc_freq = slice(freq_slc[0], freq_slc[1])
 
         # Auto-spectra
-        psd = fft_tool.power_spectral_density(disp, freq_units="Hz")
+        psd = fft_tool.power_spectral_density(disp, freq_units="Hz", pct_overlap=0.5)
         psd = psd.sel(freq=slc_freq)
         Sxx = psd.sel(S="Sxx")
         Syy = psd.sel(S="Syy")
         Szz = psd.sel(S="Szz")
 
         # Cross-spectra
-        csd = fft_tool.cross_spectral_density(disp, freq_units="Hz")
+        csd = fft_tool.cross_spectral_density(disp, freq_units="Hz", pct_overlap=0.5)
         csd = csd.sel(coh_freq=slc_freq)
         Cxz = csd.sel(C="Cxz").real
         Cxy = csd.sel(C="Cxy").real
@@ -143,7 +147,7 @@ class VapWaveStats(TransformationPipeline):
         ds["wave_dp"].values = direction.astype("float32")
         ds["wave_spread"].values = spread.astype("float32")
 
-        ds = ds.drop(("x", "y", "z"))
+        ds = ds.drop_vars(("x", "y", "z"))
 
         # Calculate directional wave spectrum
         a0 = ds["wave_energy_density"] / np.pi
@@ -372,7 +376,7 @@ class VapWaveStats(TransformationPipeline):
 
         cbar = plt.colorbar(c)
         cbar.set_label("ESD [m$^2$ s/deg]", rotation=270, labelpad=20)
-        ax.set_ylim(1, 12)
+        ax.set_ylim(2, 12)
         ylabels = ax.get_yticklabels()
         ylabels = [ilabel.get_text() for ilabel in ax.get_yticklabels()]
         ylabels = [ilabel + " s" for ilabel in ylabels]

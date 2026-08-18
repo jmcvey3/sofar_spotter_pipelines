@@ -9,7 +9,8 @@ from tsdat import TransformationPipeline
 
 fs = 2.5  # Hz, Spotter sampling frequency
 wat = 1800  # s, window averaging time
-freq_slc = [0.0455, 1]  # 22 to 1 s periods
+fft_decimation = 6  # 1/fraction of bin length for FFT vector
+freq_slc = [0.0455, 0.333]  # 22 to 3 s periods
 
 
 class VapWaves(TransformationPipeline):
@@ -25,7 +26,7 @@ class VapWaves(TransformationPipeline):
         for key in input_datasets:
             if "pos" in key:
                 # Create FFT frequency vector
-                nfft = fs * wat // 6
+                nfft = fs * wat // fft_decimation
                 f = np.fft.fftfreq(int(nfft), 1 / fs)
                 # Use only positive frequencies
                 freq = np.abs(f[1 : int(nfft / 2.0 + 1)])
@@ -63,7 +64,10 @@ class VapWaves(TransformationPipeline):
         ## Using dolfyn to create spectra
         nbin = fs * wat
         fft_tool = dolfyn.adv.api.ADVBinner(
-            n_bin=nbin, fs=fs, n_fft=nbin // 6, n_fft_coh=nbin // 6
+            n_bin=nbin,
+            fs=fs,
+            n_fft=nbin // fft_decimation,
+            n_fft_coh=nbin // fft_decimation,
         )
         # Trim frequency vector to > 0.0455 Hz (wave periods smaller than 22 s)
         slc_freq = slice(freq_slc[0], freq_slc[1])
@@ -133,7 +137,7 @@ class VapWaves(TransformationPipeline):
         ds["wave_dp"].values = direction.astype("float32")
         ds["wave_spread"].values = spread.astype("float32")
 
-        return ds.drop(("x", "y", "z"))
+        return ds.drop_vars(("x", "y", "z"))
 
     def hook_finalize_dataset(self, dataset: xr.Dataset) -> xr.Dataset:
         # (Optional) Use this hook to modify the dataset after qc is applied

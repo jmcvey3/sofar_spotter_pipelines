@@ -251,7 +251,7 @@ class VapWaveStats(TransformationPipeline):
 
         cbar = plt.colorbar(c)
         cbar.set_label("ESD [m$^2$ s/deg]", rotation=270, labelpad=20)
-        ax.set_ylim(1, 12)
+        ax.set_ylim(2, 12)
         ylabels = ax.get_yticklabels()
         ylabels = [ilabel.get_text() for ilabel in ax.get_yticklabels()]
         ylabels = [ilabel + " s" for ilabel in ylabels]
