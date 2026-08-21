@@ -9,9 +9,15 @@ coords:
   time:
     .*pos.*:
       name: time
+  time_cwt:
+    .*pos.*:
+      name: time
   frequency:
     .*pos.*: 
       name: frequency
+  direction:
+    .*pos.*:
+      name: direction
 
 data_vars:
   x:

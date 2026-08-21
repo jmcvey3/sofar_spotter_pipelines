@@ -17,55 +17,11 @@ class VapWaveStats(TransformationPipeline):
         # Code hook to customize any input datasets prior to datastreams being combined
         # and data converters being run.
 
-        # Need to write in direction coordinate that will be used later
-        for key in input_datasets:
-            if "wave" in key:
-                directions = np.arange(0, 360, 2.0).astype("float32")
-                input_datasets[key] = input_datasets[key].assign_coords(
-                    {"direction": directions}
-                )
-                return input_datasets
+        return input_datasets
 
     def hook_customize_dataset(self, dataset: xr.Dataset) -> xr.Dataset:
         # (Optional) Use this hook to modify the dataset before qc is applied
         dataset.attrs.pop("description")
-
-        # Calculate directional wave spectrum
-        a0 = dataset["wave_energy_density"] / np.pi
-        r1 = (1 / a0) * np.sqrt(
-            dataset["wave_a1_value"] ** 2 + dataset["wave_b1_value"] ** 2
-        )
-        r2 = (1 / a0) * np.sqrt(
-            dataset["wave_a2_value"] ** 2 + dataset["wave_b2_value"] ** 2
-        )
-        # dir1 (+/- pi) and dir2 (+/- pi/2) are CCW from East, "to" convention
-        dir1 = np.arctan2(dataset["wave_b1_value"], dataset["wave_a1_value"])
-        dir2 = 0.5 * np.arctan2(dataset["wave_b2_value"], dataset["wave_a2_value"])
-
-        # Spreading function
-        # Subtract dataset variable to get dimensions right
-        D = (1 / np.pi) * (
-            0.5
-            + r1 * np.cos(-1 * (dir1 - np.deg2rad(dataset["direction"])))
-            + r2 * np.cos(-2 * (dir2 - np.deg2rad(dataset["direction"])))
-        )
-
-        # Wave energy density is units of Hz and degrees
-        dataset["wave_dir_energy_density"].values = dataset[
-            "wave_energy_density"
-        ] * np.rad2deg(D)
-
-        # Reset direction coordinate so that the spreading function D corresponds
-        # to CW from North, "from" convention, instead of CCW from East, "to" convention.
-        dir_from_N = (270 - dataset["direction"]) % 360
-        dirN = xr.DataArray(
-            dir_from_N,
-            coords={"direction": dir_from_N},
-            attrs=dataset["direction"].attrs,
-        )
-        dataset = dataset.assign_coords({"direction": dirN})
-        # sort direction properly so that it runs 0 - 360
-        dataset = dataset.sortby(dataset["direction"])
 
         return dataset
 
@@ -235,30 +191,4 @@ class VapWaveStats(TransformationPipeline):
         plot_file = self.get_ancillary_filepath(title="wave_rose")
         fig.savefig(plot_file)
 
-        # Plot directional spectra
-        fig, ax = plt.subplots(
-            figsize=(8, 6), subplot_kw=dict(projection="polar"), constrained_layout=True
-        )
-        ax.set_theta_zero_location("N")
-        ax.set_theta_direction(-1)
-        # Use frequencies up to 0.5 Hz
-        spectrum = dataset["wave_dir_energy_density"].mean("time")
-        # Create grid and plot
-        a, f = np.meshgrid(np.deg2rad(spectrum["direction"]), 1 / spectrum["frequency"])
-        color_level_max = np.ceil(np.max(spectrum.values) * 10) / 10
-        levels = np.linspace(0, color_level_max, 11)
-        c = ax.contourf(a, f, spectrum, levels=levels, cmap="Blues")
-
-        cbar = plt.colorbar(c)
-        cbar.set_label("ESD [m$^2$ s/deg]", rotation=270, labelpad=20)
-        ax.set_ylim(2, 12)
-        ylabels = ax.get_yticklabels()
-        ylabels = [ilabel.get_text() for ilabel in ax.get_yticklabels()]
-        ylabels = [ilabel + " s" for ilabel in ylabels]
-        ticks_loc = ax.get_yticks()
-        ax.set_yticks(ticks_loc)
-        ax.set_yticklabels(ylabels)
-
-        plot_file = self.get_ancillary_filepath(title="directional_spectra")
-        fig.savefig(plot_file)
         plt.close("all")

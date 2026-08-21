@@ -4,7 +4,9 @@ import xarray as xr
 from tsdat import assert_close, PipelineConfig, TransformationPipeline
 
 
-@pytest.mark.dependency(depends=["../../example_pipeline/test/test_pipeline.py"])
+@pytest.mark.dependency(
+    depends=["../../vap_wave_raw_v1/test/test_vap_wave_raw_v1_pipeline.py"]
+)
 def test_vap_wave_stats_v1_pipeline():
     # The transformation pipeline will likely depend on the output of an ingestion
     # pipeline. To account for this we first run the ingest to generate input data for
@@ -30,6 +32,6 @@ def test_vap_wave_stats_v1_pipeline():
     # You will need to create this file after running the data through the pipeline
     # OR: Delete this and perform sanity checks on the input data instead of comparing
     # with an expected output file
-    expected_file = "pipelines/vap_wave_stats_v1/test/data/expected/clallam.wave_stats.c1.20210903.162303.nc"
+    expected_file = "pipelines/vap_wave_stats_v1/test/data/expected/clallam.wave_stats.c1.20210903.162526.nc"
     expected: xr.Dataset = xr.open_dataset(expected_file)  # type: ignore
     assert_close(dataset, expected, check_attrs=False, atol=1e-4)

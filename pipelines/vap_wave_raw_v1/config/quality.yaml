@@ -70,4 +70,4 @@ managers:
           meaning: "Check factor either null or < 0.5"
     apply_to:
       - DATA_VARS
-    exclude: [wave_energy_density, wave_check_factor]
+    exclude: [wave_check_factor, wavelet_energy_density, wave_direction, directional_distr_func, wavelet_dir_energy_density]

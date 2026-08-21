@@ -9,7 +9,7 @@ def test_waves_pipeline():
     pipeline = config.instantiate_pipeline()
 
     test_file = "pipelines/spotter_v1/test/data/input/0026_FLT.CSV"
-    expected_file = "pipelines/spotter_v1/test/data/expected/clallam.spotter-pos-400ms.a1.20210903.160801.nc"
+    expected_file = "pipelines/spotter_v1/test/data/expected/clallam.spotter-pos-400ms.a1.20210903.161023.nc"
 
     dataset = pipeline.run([test_file])
     expected: xr.Dataset = xr.open_dataset(expected_file)  # type: ignore
@@ -22,7 +22,7 @@ def test_gps_pipeline():
     pipeline = config.instantiate_pipeline()
 
     test_file = "pipelines/spotter_v1/test/data/input/0026_LOC.CSV"
-    expected_file = "pipelines/spotter_v1/test/data/expected/clallam.spotter-gps-1min.a1.20210903.160821.nc"
+    expected_file = "pipelines/spotter_v1/test/data/expected/clallam.spotter-gps-1min.a1.20210903.161021.nc"
 
     dataset = pipeline.run([test_file])
     expected: xr.Dataset = xr.open_dataset(expected_file)  # type: ignore
@@ -35,7 +35,7 @@ def test_sst_pipeline():
     pipeline = config.instantiate_pipeline()
 
     test_file = "pipelines/spotter_v1/test/data/input/0026_SST.CSV"
-    expected_file = "pipelines/spotter_v1/test/data/expected/clallam.spotter-sst-1min.a1.20210903.160822.nc"
+    expected_file = "pipelines/spotter_v1/test/data/expected/clallam.spotter-sst-1min.a1.20210903.161023.nc"
 
     dataset = pipeline.run([test_file])
     expected: xr.Dataset = xr.open_dataset(expected_file)  # type: ignore

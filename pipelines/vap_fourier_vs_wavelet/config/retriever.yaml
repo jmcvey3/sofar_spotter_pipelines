@@ -1,0 +1,31 @@
+classname: tsdat.io.retrievers.StorageRetriever
+parameters:
+  fetch_parameters:
+    # How far in time to look after the "end" timestamp (+), before the "begin"
+    # timestamp (-), or both (none) to find filenames that contain needed data
+    time_padding: -24h
+
+coords:
+  time:
+    .*pos.*:
+      name: time
+  time_cwt:
+    .*pos.*:
+      name: time
+  frequency:
+    .*pos.*: 
+      name: frequency
+  direction:
+    .*pos.*:
+      name: direction
+
+data_vars:
+  x:
+    .*pos.*:
+      name: x
+  y:
+    .*pos.*:
+      name: y
+  z:
+    .*pos.*:
+      name: z

@@ -1,16 +1,12 @@
 import numpy as np
 import xarray as xr
 from typing import Dict
+from tsdat import TransformationPipeline
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from mhkit import wave, dolfyn
 from cmocean.cm import amp_r, dense, haline
-from tsdat import TransformationPipeline
 
-fs = 2.5  # Hz, Spotter sampling frequency
-wat = 1800  # s, window averaging time
-fft_decimation = 6  # 1/fraction of bin length for FFT vector
-freq_slc = [0.0455, 0.333]  # 22 to 3 s periods
+from shared.wave_analysis import constants, wave_analysis
 
 
 class VapWaves(TransformationPipeline):
@@ -26,14 +22,19 @@ class VapWaves(TransformationPipeline):
         for key in input_datasets:
             if "pos" in key:
                 # Create FFT frequency vector
-                nfft = fs * wat // fft_decimation
-                f = np.fft.fftfreq(int(nfft), 1 / fs)
+                nfft = constants["fs"] * constants["wat"] // constants["fft_decimation"]
+                f = np.fft.fftfreq(int(nfft), 1 / constants["fs"])
                 # Use only positive frequencies
                 freq = np.abs(f[1 : int(nfft / 2.0 + 1)])
                 # Trim frequency vector to > 0.0455 Hz (wave periods between 1 and 22 s)
-                freq = freq[np.where((freq > freq_slc[0]) & (freq <= freq_slc[1]))]
+                freq = freq[
+                    np.where(
+                        (freq > constants["freq_slc"][0])
+                        & (freq <= constants["freq_slc"][1])
+                    )
+                ]
                 input_datasets[key] = input_datasets[key].assign_coords(
-                    {"frequency": freq.astype("float32")}
+                    {"frequency": freq, "direction": constants["dir_centers"]}
                 )
 
                 return input_datasets
@@ -41,101 +42,7 @@ class VapWaves(TransformationPipeline):
     def hook_customize_dataset(self, dataset: xr.Dataset) -> xr.Dataset:
         # (Optional) Use this hook to modify the dataset before qc is applied
 
-        ds = dataset.copy()
-
-        # Fill small gps so we can calculate a wave spectrum
-        for key in ["x", "y", "z"]:
-            ds[key] = ds[key].interpolate_na(
-                dim="time", method="linear", max_gap=np.timedelta64(5, "s")
-            )
-
-        # Create 2D tensor for spectral analysis
-        disp = xr.DataArray(
-            data=np.array(
-                [
-                    ds["x"],
-                    ds["y"],
-                    ds["z"],
-                ]
-            ),
-            coords={"dir": ["x", "y", "z"], "time": ds["time"]},
-        )
-
-        ## Using dolfyn to create spectra
-        nbin = fs * wat
-        fft_tool = dolfyn.adv.api.ADVBinner(
-            n_bin=nbin,
-            fs=fs,
-            n_fft=nbin // fft_decimation,
-            n_fft_coh=nbin // fft_decimation,
-        )
-        # Trim frequency vector to > 0.0455 Hz (wave periods smaller than 22 s)
-        slc_freq = slice(freq_slc[0], freq_slc[1])
-
-        # Auto-spectra
-        psd = fft_tool.power_spectral_density(disp, freq_units="Hz", pct_overlap=0.5)
-        psd = psd.sel(freq=slc_freq)
-        Sxx = psd.sel(S="Sxx")
-        Syy = psd.sel(S="Syy")
-        Szz = psd.sel(S="Szz")
-
-        # Cross-spectra
-        csd = fft_tool.cross_spectral_density(disp, freq_units="Hz", pct_overlap=0.5)
-        csd = csd.sel(coh_freq=slc_freq)
-        Cxz = csd.sel(C="Cxz").real
-        Cxy = csd.sel(C="Cxy").real
-        Cyz = csd.sel(C="Cyz").real
-
-        ## Wave height and period
-        pd_Szz = Szz.T.to_pandas()
-        Hs = wave.resource.significant_wave_height(pd_Szz)
-        Te = wave.resource.energy_period(pd_Szz)
-        Ta = wave.resource.average_wave_period(pd_Szz)
-        Tp = wave.resource.peak_period(pd_Szz)
-        Tz = wave.resource.average_zero_crossing_period(pd_Szz)
-
-        # Check factor: generally should be around 1
-        k = np.sqrt((Sxx + Syy) / Szz)
-
-        # Calculate peak wave direction and spread
-        a1 = Cxz.values / np.sqrt((Sxx + Syy) * Szz)
-        b1 = Cyz.values / np.sqrt((Sxx + Syy) * Szz)
-        a2 = (Sxx - Syy) / (Sxx + Syy)
-        b2 = 2 * Cxy.values / (Sxx + Syy)
-        theta = np.rad2deg(np.arctan2(b1, a1))  # degrees CCW from East, "to" convention
-        phi = np.rad2deg(np.sqrt(2 * (1 - np.sqrt(a1**2 + b1**2))))
-
-        # Get peak frequency - fill nan slices with 0
-        peak_idx = psd[2].fillna(0).argmax("freq")
-        # degrees CW from North ("from" convention)
-        direction = (270 - theta[:, peak_idx]) % 360
-        # Set direction from -180 to 180
-        direction[direction > 180] -= 360
-        spread = phi[:, peak_idx]
-
-        # Trim dataset length
-        ds = ds.isel(time=slice(None, len(psd["time_psd"])))
-        # Set time coordinates
-        time = xr.DataArray(
-            psd["time_psd"].values,
-            coords={"time": psd["time_psd"].values},
-            attrs=ds["time"].attrs,
-        )
-        ds = ds.assign_coords({"time": time})
-        # Make sure mhkit vars are set to float32
-        ds["wave_energy_density"].values = Szz
-        ds["wave_hs"].values = Hs.to_xarray().astype("float32")
-        ds["wave_te"].values = Te.to_xarray().astype("float32")
-        ds["wave_tp"].values = Tp.to_xarray().astype("float32")
-        ds["wave_ta"].values = Ta.to_xarray().astype("float32")
-        ds["wave_tz"].values = Tz.to_xarray().astype("float32")
-        ds["wave_check_factor"].values = k
-        ds["wave_a1_value"].values = a1
-        ds["wave_b1_value"].values = b1
-        ds["wave_a2_value"].values = a2
-        ds["wave_b2_value"].values = b2
-        ds["wave_dp"].values = direction.astype("float32")
-        ds["wave_spread"].values = spread.astype("float32")
+        ds = wave_analysis(dataset)
 
         return ds.drop_vars(("x", "y", "z"))
 
@@ -148,14 +55,15 @@ class VapWaves(TransformationPipeline):
         # (Optional, recommended) Create plots.
         plt.style.use("default")  # clear any styles that were set before
 
-        # Wave spectrum
+        # Wave spectra figure
         fig, ax = plt.subplots(figsize=(6, 6))
         fig.subplots_adjust(left=0.14, right=0.95, top=0.95, bottom=0.1)
-        ax.loglog(
-            dataset["frequency"],
-            dataset["wave_energy_density"].mean("time"),
-            label="vertical",
-        )
+        for timestamp in dataset["time"]:
+            ax.loglog(
+                dataset["frequency"],
+                dataset["wave_energy_density"].sel(time=timestamp),
+                label="vertical",
+            )
         m = -4
         x = np.logspace(-1, 0)
         y = 10 ** (-4) * x**m
@@ -168,7 +76,7 @@ class VapWaves(TransformationPipeline):
         plot_file = self.get_ancillary_filepath(title="elevation_spectrum")
         fig.savefig(plot_file)
 
-        # Wave stats
+        # Wave time-series figure
         fig, ax = plt.subplots(3, 1, figsize=(10, 7), constrained_layout=True)
         ax[0].plot(
             dataset["time"],
@@ -207,7 +115,7 @@ class VapWaves(TransformationPipeline):
             label="Zero Crossing Period",
             color=dense(0.95),
         )
-        ax[1].set(ylabel="Period [s]")
+        ax[1].set(ylim=(0, 22), ylabel="Period [s]")
 
         ax[2].plot(
             dataset["time"],
@@ -224,7 +132,6 @@ class VapWaves(TransformationPipeline):
             color=haline(0.50),
         )
         ax[2].set(ylabel="Direction [deg]")
-
         for a in ax:
             a.legend(loc="upper left", bbox_to_anchor=[1.01, 1.0], handlelength=1.5)
         for a in ax[:-1]:
@@ -233,7 +140,76 @@ class VapWaves(TransformationPipeline):
         ax[0].set(title=f"{dataset.datastream} on {date}")
         ax[-1].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
         ax[-1].set(xlabel="Time (UTC)")
-
         plot_file = self.get_ancillary_filepath(title="wave_stats")
         fig.savefig(plot_file)
+
+        ## Wavelet figure
+        fig, ax = plt.subplots(
+            figsize=(10, 5), subplot_kw={"yscale": "log"}, constrained_layout=True
+        )
+        vmax = 0.35
+        pcm = ax.pcolormesh(
+            dataset["time_cwt"].values,
+            dataset["frequency"].values,
+            dataset["wavelet_energy_density"].T,
+            cmap="Blues",
+            shading="nearest",
+            vmin=0,
+            vmax=vmax,
+        )
+        ax.set(ylim=(0.03, 1), ylabel="Frequency [Hz]", xlabel="Time")
+        fig.colorbar(pcm, ax=ax, label=r"Wavelet Energy Density [m$^2$]")
+        # Quiver arrows show propagation direction (wave_direction is "from" convention, so flip 180)
+        theta = np.deg2rad((dataset["wave_direction"] + 180) % 360)
+        qu = np.sin(theta).T
+        qv = np.cos(theta).T
+        time_grid, freq_grid = np.meshgrid(
+            dataset["time_cwt"].values, dataset["frequency"].values
+        )
+        step_t, step_f = 10, 5  # subsample to avoid a cluttered quiver
+        energy = dataset["wavelet_energy_density"].T.values[::step_f, ::step_t]
+        energy_thresh = 0.1 * vmax  # only show arrows above 10% of max energy shown
+        qu_masked = np.where(
+            energy >= energy_thresh, qu.values[::step_f, ::step_t], np.nan
+        )
+        qv_masked = np.where(
+            energy >= energy_thresh, qv.values[::step_f, ::step_t], np.nan
+        )
+        ax.quiver(
+            time_grid[::step_f, ::step_t],
+            freq_grid[::step_f, ::step_t],
+            qu_masked,
+            qv_masked,
+            color="black",
+            scale=60,
+            width=0.002,
+        )
+        plot_file = self.get_ancillary_filepath(title="wavelet_energy_density")
+        fig.savefig(plot_file)
+
+        # Plot directional spectra
+        fig, ax = plt.subplots(
+            figsize=(8, 6), subplot_kw=dict(projection="polar"), constrained_layout=True
+        )
+        ax.set_theta_zero_location("N")
+        ax.set_theta_direction(-1)
+        # Use frequencies up to 0.5 Hz
+        spectrum = dataset["wavelet_dir_energy_density"].mean("time_cwt")
+        # Create grid and plot
+        a, f = np.meshgrid(np.deg2rad(spectrum["direction"]), 1 / spectrum["frequency"])
+        color_level_max = np.nanmax(spectrum.values)
+        levels = np.linspace(0, color_level_max, 11)
+        c = ax.contourf(a, f, spectrum, levels=levels, cmap="Blues")
+        cbar = plt.colorbar(c)
+        cbar.set_label(r"ESD [m$^2$/deg]", labelpad=20)
+        ax.set_ylim(2, 12)
+        ylabels = ax.get_yticklabels()
+        ylabels = [ilabel.get_text() for ilabel in ax.get_yticklabels()]
+        ylabels = [ilabel + " s" for ilabel in ylabels]
+        ticks_loc = ax.get_yticks()
+        ax.set_yticks(ticks_loc)
+        ax.set_yticklabels(ylabels)
+        plot_file = self.get_ancillary_filepath(title="wavelet_directional_spectra")
+        fig.savefig(plot_file)
+
         plt.close("all")

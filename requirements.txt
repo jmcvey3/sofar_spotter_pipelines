@@ -1,3 +1,4 @@
 tsdat>=0.10.0
 mhkit[dolfyn,tidal,wave]
 cmocean
+pycwt
