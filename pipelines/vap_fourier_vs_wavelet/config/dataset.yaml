@@ -15,14 +15,6 @@ coords:
       long_name: Time
       standard_name: time
       timezone: UTC
-  time_cwt:
-    dims: [time_cwt]
-    dtype: datetime64[ms]
-    attrs:
-      units: Seconds since 1970-01-01 00:00:00 UTC
-      long_name: Time
-      standard_name: time
-      timezone: UTC
   frequency:
     dims: [frequency]
     dtype: float32
@@ -184,6 +176,15 @@ data_vars:
       units: m^2 s
       standard_name: sea_surface_wave_variance_spectral_density
       valid_min: 0.0
+  spreading_func:
+    dims: [time, frequency, direction]
+    dtype: float
+    attrs:
+      long_name: Spreading Function 
+      units: 1/degree
+      comment: >-
+        Parametric estimate of the directional distribution function found 
+        using the direct Fourier transform method
   wave_dir_energy_density:
     dims: [time, frequency, direction]
     dtype: float
@@ -195,7 +196,7 @@ data_vars:
 
 
   wave_hs_cwt:
-    dims: [time_cwt]
+    dims: [time]
     dtype: float32
     attrs:
       long_name: Significant Wave Height (wavelet)
@@ -203,7 +204,7 @@ data_vars:
       valid_min: 0
       valid_max: 20
   wave_te_cwt:
-    dims: [time_cwt]
+    dims: [time]
     dtype: float32
     attrs:
       long_name: Wave Energy Period (wavelet)
@@ -211,7 +212,7 @@ data_vars:
       valid_min: 0
       valid_max: 22
   wave_tp_cwt:
-    dims: [time_cwt]
+    dims: [time]
     dtype: float32
     attrs:
       long_name: Peak Wave Period (wavelet)
@@ -219,7 +220,7 @@ data_vars:
       valid_min: 0
       valid_max: 22
   wave_ta_cwt:
-    dims: [time_cwt]
+    dims: [time]
     dtype: float32
     attrs:
       long_name: Average Wave Period (wavelet)
@@ -227,7 +228,7 @@ data_vars:
       valid_min: 0
       valid_max: 22
   wave_tz_cwt:
-    dims: [time_cwt]
+    dims: [time]
     dtype: float32
     attrs:
       long_name: Zero-Upcross Wave Period (wavelet)
@@ -235,31 +236,31 @@ data_vars:
       valid_min: 0
       valid_max: 22
   wave_dp_cwt:
-    dims: [time_cwt]
+    dims: [time]
     dtype: float32
     attrs:
       long_name: Peak Wave Direction (wavelet)
       units: degree
       valid_min: -180
       valid_max: 180
-  wavelet_energy_density:
-    dims: [time_cwt, frequency]
-    dtype: float
-    attrs:
-      long_name: Wave Energy Density (wavelet)
-      standard_name: sea_surface_wave_variance_spectral_density
-      units: m^2 s
-      valid_min: 0.0
   wave_direction:
-    dims: [time_cwt, frequency]
+    dims: [time, frequency]
     dtype: float
     attrs:
       long_name: Wave Direction
       units: degree
       valid_min: -180
       valid_max: 180
+  wavelet_energy_density:
+    dims: [time, frequency]
+    dtype: float
+    attrs:
+      long_name: Wave Energy Density (wavelet)
+      standard_name: sea_surface_wave_variance_spectral_density
+      units: m^2 s
+      valid_min: 0.0
   directional_distr_func:
-    dims: [time_cwt, frequency, direction]
+    dims: [time, frequency, direction]
     dtype: float
     attrs:
       long_name: Directional Distribution Function (wavelet)
@@ -268,9 +269,9 @@ data_vars:
       comment: >-
         Histogram of the fast-time wave direction estimate within each cwt_tool
         time bin, normalized to integrate to 1 over direction for each
-        time_cwt/frequency (5 degree bins).
+        time/frequency (5 degree bins).
   wavelet_dir_energy_density:
-    dims: [time_cwt, frequency, direction]
+    dims: [time, frequency, direction]
     dtype: float
     attrs:
       long_name: Directional Wave Energy Density (wavelet)
@@ -278,6 +279,6 @@ data_vars:
       standard_name: sea_surface_wave_directional_variance_spectral_density
       valid_min: 0.0
       comment: >-
-        2D wave spectrum E(time_cwt, f, theta) = S(time_cwt, f) * D(time_cwt, f, theta),
+        2D wave spectrum E(time, f, theta) = S(time, f) * D(time, f, theta),
         where S is the wavelet energy density and D is the directional
         distribution function, both computed per cwt_tool time bin.

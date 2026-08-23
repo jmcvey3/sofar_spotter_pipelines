@@ -7,6 +7,7 @@ import matplotlib.dates as mdates
 from cmocean.cm import amp_r, dense, haline
 
 from shared.wave_analysis import constants, wave_analysis
+from shared.plots import directional_spectra
 
 
 class VapWaves(TransformationPipeline):
@@ -42,7 +43,15 @@ class VapWaves(TransformationPipeline):
     def hook_customize_dataset(self, dataset: xr.Dataset) -> xr.Dataset:
         # (Optional) Use this hook to modify the dataset before qc is applied
 
+        # Conduct comparison analysis between Welch-PSD and Morlet Wavelet estimates
         ds = wave_analysis(dataset, wavelet_basic_stats=True, directional_spectra=True)
+        # Create directional spectra
+        ds["wave_dir_energy_density"].values = (
+            ds["wave_energy_density"] * ds["spreading_func"]
+        )
+        ds["wavelet_dir_energy_density"].values = (
+            ds["wavelet_energy_density"] * ds["directional_distr_func"]
+        )
 
         return ds.drop_vars(("x", "y", "z"))
 
@@ -86,9 +95,9 @@ class VapWaves(TransformationPipeline):
             color=amp_r(0.10),
         )
         ax[0].plot(
-            dataset["time_cwt"],
+            dataset["time"],
             dataset["wave_hs_cwt"],
-            ".",
+            "+",
             label="Significant Wave Height (wavelet)",
             color=amp_r(0.10),
         )
@@ -102,9 +111,9 @@ class VapWaves(TransformationPipeline):
             color=dense(0.15),
         )
         ax[1].plot(
-            dataset["time_cwt"],
+            dataset["time"],
             dataset["wave_ta_cwt"],
-            ".",
+            "+",
             label="Mean Period (wavelet)",
             color=dense(0.15),
         )
@@ -116,9 +125,9 @@ class VapWaves(TransformationPipeline):
             color=dense(0.35),
         )
         ax[1].plot(
-            dataset["time_cwt"],
+            dataset["time"],
             dataset["wave_tp_cwt"],
-            ".",
+            "+",
             label="Peak Period (wavelet)",
             color=dense(0.35),
         )
@@ -130,9 +139,9 @@ class VapWaves(TransformationPipeline):
             color=dense(0.65),
         )
         ax[1].plot(
-            dataset["time_cwt"],
+            dataset["time"],
             dataset["wave_te_cwt"],
-            ".",
+            "+",
             label="Energy Period (wavelet)",
             color=dense(0.65),
         )
@@ -144,9 +153,9 @@ class VapWaves(TransformationPipeline):
             color=dense(0.95),
         )
         ax[1].plot(
-            dataset["time_cwt"],
+            dataset["time"],
             dataset["wave_tz_cwt"],
-            ".",
+            "+",
             label="Zero Crossing Period (wavelet)",
             color=dense(0.95),
         )
@@ -160,9 +169,9 @@ class VapWaves(TransformationPipeline):
             color=haline(0.10),
         )
         ax[2].plot(
-            dataset["time_cwt"],
+            dataset["time"],
             dataset["wave_dp_cwt"],
-            ".",
+            "+",
             label="Peak Direction (wavelet)",
             color=haline(0.10),
         )
@@ -191,7 +200,7 @@ class VapWaves(TransformationPipeline):
         )
         vmax = 0.35
         pcm = ax.pcolormesh(
-            dataset["time_cwt"].values,
+            dataset["time"].values,
             dataset["frequency"].values,
             dataset["wavelet_energy_density"].T,
             cmap="Blues",
@@ -206,7 +215,7 @@ class VapWaves(TransformationPipeline):
         qu = np.sin(theta).T
         qv = np.cos(theta).T
         time_grid, freq_grid = np.meshgrid(
-            dataset["time_cwt"].values, dataset["frequency"].values
+            dataset["time"].values, dataset["frequency"].values
         )
         step_t, step_f = 10, 5  # subsample to avoid a cluttered quiver
         energy = dataset["wavelet_energy_density"].T.values[::step_f, ::step_t]
@@ -229,54 +238,24 @@ class VapWaves(TransformationPipeline):
         plot_file = self.get_ancillary_filepath(title="wavelet_energy_density")
         fig.savefig(plot_file)
 
-        # Plot directional spectra
-        fig, ax = plt.subplots(
-            figsize=(8, 6), subplot_kw=dict(projection="polar"), constrained_layout=True
+        # Plot wavelet directional spectra
+        fig, ax = directional_spectra(
+            dataset["wavelet_dir_energy_density"].mean("time")
         )
-        ax.set_theta_zero_location("N")
-        ax.set_theta_direction(-1)
-        # Use frequencies up to 0.5 Hz
-        spectrum = dataset["wavelet_dir_energy_density"].mean("time_cwt")
-        # Create grid and plot
-        a, f = np.meshgrid(np.deg2rad(spectrum["direction"]), 1 / spectrum["frequency"])
-        color_level_max = np.nanmax(spectrum.values)
-        levels = np.linspace(0, color_level_max, 11)
-        c = ax.contourf(a, f, spectrum, levels=levels, cmap="Blues")
-        cbar = plt.colorbar(c)
-        cbar.set_label(r"ESD [m$^2$/deg]", labelpad=20)
-        ax.set_ylim(2, 12)
-        ylabels = ax.get_yticklabels()
-        ylabels = [ilabel.get_text() for ilabel in ax.get_yticklabels()]
-        ylabels = [ilabel + " s" for ilabel in ylabels]
-        ticks_loc = ax.get_yticks()
-        ax.set_yticks(ticks_loc)
-        ax.set_yticklabels(ylabels)
         plot_file = self.get_ancillary_filepath(title="wavelet_directional_spectra")
         fig.savefig(plot_file)
 
         # Plot Fourier directional spectra
-        fig, ax = plt.subplots(
-            figsize=(8, 6), subplot_kw=dict(projection="polar"), constrained_layout=True
-        )
-        ax.set_theta_zero_location("N")
-        ax.set_theta_direction(-1)
-        # Use frequencies up to 0.5 Hz
-        spectrum = dataset["wave_dir_energy_density"].mean("time")
-        # Create grid and plot
-        a, f = np.meshgrid(np.deg2rad(spectrum["direction"]), 1 / spectrum["frequency"])
-        color_level_max = np.nanmax(spectrum.values)
-        levels = np.linspace(0, color_level_max, 11)
-        c = ax.contourf(a, f, spectrum, levels=levels, cmap="Blues")
-        cbar = plt.colorbar(c)
-        cbar.set_label(r"ESD [m$^2$s/deg]", labelpad=20)
-        ax.set_ylim(2, 12)
-        ylabels = ax.get_yticklabels()
-        ylabels = [ilabel.get_text() for ilabel in ax.get_yticklabels()]
-        ylabels = [ilabel + " s" for ilabel in ylabels]
-        ticks_loc = ax.get_yticks()
-        ax.set_yticks(ticks_loc)
-        ax.set_yticklabels(ylabels)
+        fig, ax = directional_spectra(dataset["wave_dir_energy_density"].mean("time"))
         plot_file = self.get_ancillary_filepath(title="directional_spectra")
+        fig.savefig(plot_file)
+
+        # Use PSD with wavelet directions
+        dir_energy_density = (
+            dataset["wave_energy_density"] * dataset["directional_distr_func"]
+        )
+        fig, ax = directional_spectra(dir_energy_density.mean("time"))
+        plot_file = self.get_ancillary_filepath(title="fft-wavelet_directional_spectra")
         fig.savefig(plot_file)
 
         plt.close("all")
