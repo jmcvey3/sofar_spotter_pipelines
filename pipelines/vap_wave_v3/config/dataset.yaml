@@ -283,54 +283,6 @@ data_vars:
       units: degree
       valid_min: 0
       valid_max: 180
-  wave_energy_density:
-    dims: [time, frequency]
-    dtype: float32
-    attrs:
-      long_name: Wave Energy Density
-      units: m^2 s
-      standard_name: sea_surface_wave_variance_spectral_density
-      valid_min: 0.0
-  wave_dir_energy_density:
-    dims: [frequency, direction]
-    dtype: float32
-    attrs:
-      long_name: Directional Energy Density
-      units: m^2 s / deg
-      standard_name: sea_surface_wave_directional_variance_spectral_density
-      valid_min: 0.0
-  wave_a1_value:
-    dims: [time, frequency]
-    dtype: float32
-    attrs:
-      long_name: a1 Fourier Coefficient
-      valid_min: -1.0
-      valid_max: 1.0
-      units: "1"
-  wave_b1_value:
-    dims: [time, frequency]
-    dtype: float32
-    attrs:
-      long_name: b1 Fourier Coefficient
-      valid_min: -1.0
-      valid_max: 1.0
-      units: "1"
-  wave_a2_value:
-    dims: [time, frequency]
-    dtype: float32
-    attrs:
-      long_name: a2 Fourier Coefficient
-      valid_min: -1.0
-      valid_max: 1.0
-      units: "1"
-  wave_b2_value:
-    dims: [time, frequency]
-    dtype: float32
-    attrs:
-      long_name: b2 Fourier Coefficient
-      valid_min: -1.0
-      valid_max: 1.0
-      units: "1"
   wave_check_factor:
     dims: [time, frequency]
     dtype: float32
@@ -340,3 +292,55 @@ data_vars:
       valid_max: 2.549999952316284
       comment: Should be close to unity
       units: "1"
+  wave_energy_density:
+    dims: [time, frequency]
+    dtype: float32
+    attrs:
+      long_name: Wave Energy Density
+      units: m^2 s
+      standard_name: sea_surface_wave_variance_spectral_density
+      valid_min: 0.0
+  wave_dir_energy_density:
+    dims: [time, frequency, direction]
+    dtype: float32
+    attrs:
+      long_name: Directional Energy Density
+      units: m^2 s / deg
+      standard_name: sea_surface_wave_directional_variance_spectral_density
+      valid_min: 0.0
+  spreading_func:
+    dims: [time, frequency, direction]
+    dtype: float
+    attrs:
+      long_name: Spreading Function 
+      units: 1/degree
+      comment: >-
+        Parametric estimate of the directional distribution function found 
+        using the direct Fourier transform method
+  wave_direction:
+    dims: [time, frequency]
+    dtype: float
+    attrs:
+      long_name: Wave Direction (wavelet)
+      units: degree
+      valid_min: -180
+      valid_max: 180
+  wavelet_energy_density:
+    dims: [time, frequency]
+    dtype: float
+    attrs:
+      long_name: Wave Energy Density (wavelet)
+      standard_name: sea_surface_wave_variance_spectral_density
+      units: m^2 s
+      valid_min: 0.0
+  directional_distr_func:
+    dims: [time, frequency, direction]
+    dtype: float
+    attrs:
+      long_name: Directional Distribution Function (wavelet)
+      units: 1/degree
+      valid_min: 0.0
+      comment: >-
+        Histogram of the fast-time wave direction estimate within each cwt_tool
+        time bin, normalized to integrate to 1 over direction for each
+        time/frequency (5 degree bins).

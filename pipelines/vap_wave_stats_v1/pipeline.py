@@ -1,11 +1,11 @@
-import numpy as np
-import xarray as xr
 from typing import Dict
+import xarray as xr
+from tsdat import TransformationPipeline
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from cmocean.cm import amp_r, dense, haline
-from mhkit.tidal import graphics
-from tsdat import TransformationPipeline
+
+from shared.plots import plot_gps
 
 
 class VapWaveStats(TransformationPipeline):
@@ -126,69 +126,9 @@ class VapWaveStats(TransformationPipeline):
         plot_file = self.get_ancillary_filepath(title="wave_stats")
         fig.savefig(plot_file)
 
-        ## Plot GPS
-        fig, ax = plt.subplots(figsize=(6, 6))
-        fig.subplots_adjust(left=0.16, right=0.95, top=0.95, bottom=0.17)
-        ax.scatter(dataset["lon"], dataset["lat"])
-        ax.set(ylabel="Latitude [deg N]", xlabel="Longitude [deg E]")
-        ax.ticklabel_format(axis="both", style="plain", useOffset=False)
-        ax.set(
-            xlim=(dataset.geospatial_lon_min, dataset.geospatial_lon_max),
-            ylim=(dataset.geospatial_lat_min, dataset.geospatial_lat_max),
-        )
-        # Set grid below
-        ax.set_axisbelow(True)
-        ax.grid()
-        ax.tick_params(labelrotation=45)
-
+        # Plot GPS
+        fig, ax = plot_gps(dataset)
         plot_file = self.get_ancillary_filepath(title="location")
-        fig.savefig(plot_file)
-
-        # Plot wave roses
-        fig, ax = plt.subplots(
-            figsize=(8, 6), subplot_kw={"projection": "polar"}, constrained_layout=True
-        )
-        ax.set_theta_zero_location("N")
-        ax.set_theta_direction(-1)
-        # Use 360 degrees
-        dp = dataset["wave_dp"].copy(deep=True).values
-        dp = dp % 360
-        # Calculate the 2D histogram
-        H, dir_edges, vel_edges = graphics._histogram(dp, dataset["wave_hs"], 10, 0.5)
-        # Determine number of bins
-        dir_bins = H.shape[0]
-        h_bins = H.shape[1]
-        # Create the angles
-        thetas = np.arange(0, 2 * np.pi, 2 * np.pi / dir_bins)
-        # Set bar color based on wind speed
-        colors = plt.cm.Wistia(np.linspace(0, 1.0, h_bins))
-        # Set the current speed bin label names
-        # Calculate the 2D histogram
-        labels = [f"{i:.1f}-{j:.1f}" for i, j in zip(vel_edges[:-1], vel_edges[1:])]
-        # Initialize the vertical-offset (polar radius) for the stacked bar chart.
-        r_offset = np.zeros(dir_bins)
-        for h_bin in range(h_bins):
-            # Plot fist set of bars in all directions
-            ax.bar(
-                thetas,
-                H[:, h_bin],
-                width=(2 * np.pi / dir_bins),
-                bottom=r_offset,
-                color=colors[h_bin],
-                label=labels[h_bin],
-            )
-            # Increase the radius offset in all directions
-            r_offset = r_offset + H[:, h_bin]
-        # Add the a legend for current speed bins
-        plt.legend(loc="best", title="Hs [m]", bbox_to_anchor=(1.29, 1.00), ncol=1)
-        # Get the r-ticks (polar y-ticks)
-        yticks = plt.yticks()
-        # Format y-ticks with  units for clarity
-        rticks = [f"{y:.1f}%" for y in yticks[0]]
-        # Set the y-ticks
-        ax.set_yticks(yticks[0], rticks)
-
-        plot_file = self.get_ancillary_filepath(title="wave_rose")
         fig.savefig(plot_file)
 
         plt.close("all")

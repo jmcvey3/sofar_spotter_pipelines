@@ -165,7 +165,7 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
     ## Directional distribution function
     # Histogram of direction within each cwt_tool time bin
     # (same windows as Wzz_psd_cwt/D_cwt above), normalized so
-    # it integrates to 1 over direction, for each time_cwt/frequency
+    # it integrates to 1 over direction, for each time/frequency
     # This is an empirical (non-parametric) estimate
     def _hist_per_freq(x, bins):
         x = x[~np.isnan(x)]
@@ -174,10 +174,10 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
         counts, _ = np.histogram(x, bins=bins, density=True)
         return counts
 
-    # Reshape the fast-time direction estimate into cwt_tool's windows: (freq, time_cwt, n_bin)
+    # Reshape the fast-time direction estimate into cwt_tool's windows: (freq, time, n_bin)
     dir_samples = fft_tool.reshape(direction_cwt.values, step=step)
     dir_distr_func = np.apply_along_axis(_hist_per_freq, -1, dir_samples, dir_bins)
-    # (freq, time_cwt, direction) -> (time_cwt, freq, direction)
+    # (freq, time, direction) -> (time, freq, direction)
     dir_distr_func = np.moveaxis(dir_distr_func, 0, 1)
 
     if wavelet_basic_stats:

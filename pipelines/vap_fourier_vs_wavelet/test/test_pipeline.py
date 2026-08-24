@@ -12,7 +12,7 @@ def test_vap_fourier_vs_wavelet():
     #  correct folder / test name
     from pipelines.spotter_v1.test.test_pipeline import test_waves_pipeline
 
-    # test_waves_pipeline()
+    test_waves_pipeline()
 
     config_path = Path("pipelines/vap_fourier_vs_wavelet/config/pipeline.yaml")
     config = PipelineConfig.from_yaml(config_path)

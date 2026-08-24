@@ -247,7 +247,7 @@ data_vars:
     dims: [time, frequency]
     dtype: float
     attrs:
-      long_name: Wave Direction
+      long_name: Wave Direction (wavelet)
       units: degree
       valid_min: -180
       valid_max: 180
@@ -281,4 +281,4 @@ data_vars:
       comment: >-
         2D wave spectrum E(time, f, theta) = S(time, f) * D(time, f, theta),
         where S is the wavelet energy density and D is the directional
-        distribution function, both computed per cwt_tool time bin.
+        distribution function, both computed per time bin.

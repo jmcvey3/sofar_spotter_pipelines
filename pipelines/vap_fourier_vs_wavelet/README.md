@@ -51,7 +51,7 @@ This directly follows the paper: instead of ensemble-averaging cross-spectra fir
 - **Non-parametric**: no assumed functional shape — in principle it can represent arbitrarily multi-modal, narrow, or skewed distributions.
 - Each individual instantaneous direction estimate is very noisy (essentially a 1-degree-of-freedom estimate, like an unaveraged periodogram), but the noise is fought by **quantity of independent-ish time samples** rather than spectral averaging.
 - **Always non-negative** by construction (it's literally a count).
-- Resolution/quality is governed by your bin width (5°) vs. how many effective independent time samples fall in each `time_cwt` bin — too few samples and bins get noisy/sparse; too fine a bin width and you need more samples to resolve it.
+- Resolution/quality is governed by your bin width (5°) vs. how many effective independent time samples fall in each `time` bin — too few samples and bins get noisy/sparse; too fine a bin width and you need more samples to resolve it.
 
 ### Practical implications
 | | Fourier (`a1,b1,a2,b2`) | Wavelet histogram |

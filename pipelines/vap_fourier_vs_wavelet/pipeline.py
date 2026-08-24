@@ -7,7 +7,7 @@ import matplotlib.dates as mdates
 from cmocean.cm import amp_r, dense, haline
 
 from shared.wave_analysis import constants, wave_analysis
-from shared.plots import wave_spectra, directional_spectra
+from shared.plots import wave_spectra, directional_spectra, wavelets
 
 
 class VapWaves(TransformationPipeline):
@@ -206,46 +206,7 @@ class VapWaves(TransformationPipeline):
         fig.savefig(plot_file)
 
         ## Wavelet figure
-        fig, ax = plt.subplots(
-            figsize=(10, 5), subplot_kw={"yscale": "log"}, constrained_layout=True
-        )
-        vmax = 0.35
-        pcm = ax.pcolormesh(
-            dataset["time"].values,
-            dataset["frequency"].values,
-            dataset["wavelet_energy_density"].T,
-            cmap="Blues",
-            shading="nearest",
-            vmin=0,
-            vmax=vmax,
-        )
-        ax.set(ylim=(0.03, 1), ylabel="Frequency [Hz]", xlabel="Time")
-        fig.colorbar(pcm, ax=ax, label=r"Wavelet Energy Density [m$^2$]")
-        # Quiver arrows show propagation direction (wave_direction is "from" convention, so flip 180)
-        theta = np.deg2rad((dataset["wave_direction"] + 180) % 360)
-        qu = np.sin(theta).T
-        qv = np.cos(theta).T
-        time_grid, freq_grid = np.meshgrid(
-            dataset["time"].values, dataset["frequency"].values
-        )
-        step_t, step_f = 10, 5  # subsample to avoid a cluttered quiver
-        energy = dataset["wavelet_energy_density"].T.values[::step_f, ::step_t]
-        energy_thresh = 0.1 * vmax  # only show arrows above 10% of max energy shown
-        qu_masked = np.where(
-            energy >= energy_thresh, qu.values[::step_f, ::step_t], np.nan
-        )
-        qv_masked = np.where(
-            energy >= energy_thresh, qv.values[::step_f, ::step_t], np.nan
-        )
-        ax.quiver(
-            time_grid[::step_f, ::step_t],
-            freq_grid[::step_f, ::step_t],
-            qu_masked,
-            qv_masked,
-            color="black",
-            scale=60,
-            width=0.002,
-        )
+        fig, ax = wavelets(dataset)
         plot_file = self.get_ancillary_filepath(title="wavelet_energy_density")
         fig.savefig(plot_file)
 

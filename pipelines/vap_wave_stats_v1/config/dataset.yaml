@@ -77,7 +77,7 @@ coords:
       coverage_content_type: coordinate
 
 data_vars:
-  lat:
+  latitude:
     dims: [time]
     dtype: float32
     attrs:
@@ -86,7 +86,7 @@ data_vars:
       standard_name: latitude
       valid_min: -90
       valid_max: 90
-  lon:
+  longitude:
     dims: [time]
     dtype: float32
     attrs:
@@ -162,14 +162,6 @@ data_vars:
       standard_name: sea_surface_wave_from_direction_at_variance_spectral_density_maximum
       valid_min: -180
       valid_max: 180
-  wave_direction:
-    dims: [time_cwt, frequency]
-    dtype: float
-    attrs:
-      long_name: Wave Direction (wavelet)
-      units: degree
-      valid_min: -180
-      valid_max: 180
   wave_spread:
     dims: [time]
     dtype: float32
@@ -188,7 +180,14 @@ data_vars:
       valid_max: 2.549999952316284
       comment: Should be close to unity
       units: "1"
-
+  wave_direction:
+    dims: [time, frequency]
+    dtype: float
+    attrs:
+      long_name: Wave Direction (wavelet)
+      units: degree
+      valid_min: -180
+      valid_max: 180
   wave_energy_density:
     dims: [time, frequency]
     dtype: float32
@@ -198,22 +197,18 @@ data_vars:
       standard_name: sea_surface_wave_variance_spectral_density
       valid_min: 0.0
   wavelet_energy_density:
-    dims: [time_cwt, frequency]
+    dims: [time, frequency]
     dtype: float
     attrs:
       long_name: Wave Energy Density (wavelet)
       units: m^2 s
       standard_name: sea_surface_wave_variance_spectral_density
       valid_min: 0.0
-  wavelet_dir_energy_density:
-    dims: [time_cwt, frequency, direction]
+  wave_dir_energy_density:
+    dims: [time, frequency, direction]
     dtype: float
     attrs:
-      long_name: Directional Wave Energy Density (wavelet)
+      long_name: Directional Energy Density
       units: m^2 s / degree
       standard_name: sea_surface_wave_directional_variance_spectral_density
       valid_min: 0.0
-      comment: >-
-        2D wave spectrum E(time_cwt, f, theta) = S(time_cwt, f) * D(time_cwt, f, theta),
-        where S is the wavelet energy density and D is the directional
-        distribution function, both computed per cwt_tool time bin.
