@@ -74,21 +74,35 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
     # Check factor: generally should be around 1
     k = np.sqrt((Sxx + Syy) / Szz)
 
-    # Calculate peak wave direction and spread
+    # Calculate wave direction and spread
     a1 = Cxz.values / np.sqrt((Sxx + Syy) * Szz)
     b1 = Cyz.values / np.sqrt((Sxx + Syy) * Szz)
     a2 = (Sxx - Syy) / (Sxx + Syy)
     b2 = 2 * Cxy.values / (Sxx + Syy)
-    theta = np.rad2deg(np.arctan2(b1, a1))  # degrees CCW from East, "to" convention
-    phi = np.rad2deg(np.sqrt(2 * (1 - np.sqrt(a1**2 + b1**2))))
 
+    ## Mean wave direction and spread
+    # Integrate first fourier coefficients to get average energy
+    a1_int = np.trapezoid(a1.values, a1["freq"].values, axis=-1)
+    b1_int = np.trapezoid(b1.values, b1["freq"].values, axis=-1)
+    # Find angles
+    theta_mean = np.rad2deg(np.arctan2(b1_int, a1_int))
+    phi_mean = np.rad2deg(np.sqrt(2 * (1 - np.sqrt(a1_int**2 + b1_int**2))))
+    # degrees CW from North ("from" convention)
+    dir_mean = (270 - theta_mean) % 360
+    # Set direction from -180 to 180
+    dir_mean[dir_mean > 180] -= 360
+
+    ## Peak wave direction and spread
+    # (Use first moment fourier coefficients to keep it simple)
+    theta = np.rad2deg(np.arctan2(b1, a1))
+    phi = np.rad2deg(np.sqrt(2 * (1 - np.sqrt(a1**2 + b1**2))))
     # Get peak frequency - fill nan slices with 0
     peak_idx = psd[2].fillna(0).argmax("freq")
+    phi_peak = phi[:, peak_idx]
     # degrees CW from North ("from" convention)
-    direction = (270 - theta[:, peak_idx]) % 360
+    dir_peak = (270 - theta[:, peak_idx]) % 360
     # Set direction from -180 to 180
-    direction[direction > 180] -= 360
-    spread = phi[:, peak_idx]
+    dir_peak[dir_peak > 180] -= 360
 
     if directional_spectra:
         ## Direct Fourier Transform (DFT) Method for Directional Wave Spectrum
@@ -96,8 +110,8 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
         r1 = np.sqrt(a1**2 + b1**2)
         r2 = np.sqrt(a2**2 + b2**2)
         # dir1 (+/- pi) and dir2 (+/- pi/2) are CCW from East, "to" convention
-        dir1 = np.arctan2(b1, a1)
-        dir2 = 0.5 * np.arctan2(b2, a2)
+        dir1 = np.arctan2(b1, a1)  # "mean wave direction"
+        dir2 = 0.5 * np.arctan2(b2, a2)  # "principal wave direction"
 
         # ds["direction"] is CW from North, "from" convention (shared with the wavelet
         # method) - convert to CCW from East, "to" convention to match dir1/dir2
@@ -220,8 +234,10 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
     ds["wave_ta"].values = Ta.to_xarray().astype("float32")
     ds["wave_tz"].values = Tz.to_xarray().astype("float32")
     ds["wave_check_factor"].values = k
-    ds["wave_dp"].values = direction.astype("float32")
-    ds["wave_spread"].values = spread.astype("float32")
+    ds["wave_dp"].values = dir_peak.astype("float32")
+    ds["wave_dm"].values = dir_mean.astype("float32")
+    ds["wave_sp"].values = phi_peak.astype("float32")
+    ds["wave_sm"].values = phi_mean.astype("float32")
 
     ds["wave_direction"].values = direction_cwt_avg.T
     ds["wavelet_energy_density"].values = Wzz_psd_avg.T

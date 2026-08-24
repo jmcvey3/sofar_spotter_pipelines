@@ -174,6 +174,13 @@ class VapWaves(TransformationPipeline):
 
         ax[2].plot(
             dataset["time"],
+            dataset["wave_dm"],
+            ".-",
+            label="Mean Direction",
+            color=haline(0.30),
+        )
+        ax[2].plot(
+            dataset["time"],
             dataset["wave_dp"],
             ".-",
             label="Peak Direction",
@@ -188,10 +195,17 @@ class VapWaves(TransformationPipeline):
         )
         ax[2].plot(
             dataset["time"],
-            dataset["wave_spread"],
+            dataset["wave_sp"],
             ".-",
             label="Peak Spread",
             color=haline(0.50),
+        )
+        ax[2].plot(
+            dataset["time"],
+            dataset["wave_sm"],
+            ".-",
+            label="Mean Spread",
+            color=haline(0.7),
         )
         ax[2].set(ylabel="Direction [deg]")
         for a in ax:

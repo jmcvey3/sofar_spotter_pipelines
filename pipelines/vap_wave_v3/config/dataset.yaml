@@ -274,12 +274,30 @@ data_vars:
       standard_name: sea_surface_wave_from_direction_at_variance_spectral_density_maximum
       valid_min: -180
       valid_max: 180
-  wave_spread:
+  wave_dm:
+    dims: [time]
+    dtype: float32
+    attrs:
+      long_name: Mean Wave Direction
+      units: degree
+      standard_name: sea_surface_wave_mean_from_direction
+      valid_min: -180
+      valid_max: 180
+  wave_sp:
     dims: [time]
     dtype: float32
     attrs:
       long_name: Peak Wave Spread
       standard_name: sea_surface_wave_directional_spread_at_variance_spectral_density_maximum
+      units: degree
+      valid_min: 0
+      valid_max: 180
+  wave_sm:
+    dims: [time]
+    dtype: float32
+    attrs:
+      long_name: Mean Wave Spread
+      standard_name: sea_surface_wave_directional_spread
       units: degree
       valid_min: 0
       valid_max: 180

@@ -63,9 +63,15 @@ data_vars:
   wave_dp:
     .*wave.*: 
       name: wave_dp
-  wave_spread:
+  wave_dm:
     .*wave.*: 
-      name: wave_spread
+      name: wave_dm
+  wave_sp:
+    .*wave.*: 
+      name: wave_sp
+  wave_sm:
+    .*wave.*: 
+      name: wave_sm
   wave_direction:
     .*wave.*: 
       name: wave_direction
