@@ -61,7 +61,7 @@ managers:
 
   - name: Check wave factor
     checker:
-      classname: pipelines.vap_wave_raw_v1.qc.WaveCheckFactor
+      classname: pipelines.vap_fourier_vs_wavelet.qc.WaveCheckFactor
     handlers:
       - classname: tsdat.qc.handlers.RemoveFailedValues
       - classname: tsdat.qc.handlers.RecordQualityResults
@@ -70,4 +70,4 @@ managers:
           meaning: "Check factor either null or < 0.5"
     apply_to:
       - DATA_VARS
-    exclude: [wave_check_factor, wavelet_energy_density, wave_direction, directional_distr_func, wavelet_dir_energy_density]
+    exclude: [wave_check_factor, wave_hs_cwt, wave_te_cwt, wave_tp_cwt, wave_ta_cwt, wave_tz_cwt, wave_dp_cwt, wavelet_energy_density, wave_direction, directional_distr_func, wavelet_dir_energy_density]

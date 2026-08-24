@@ -30,12 +30,12 @@ coords:
       name: direction
 
 data_vars:
-  lat:
+  latitude:
     .*gps.*:
       name: lat
       data_converters:
         - classname: tsdat.transform_v2.LinearInterpolate
-  lon:
+  longitude:
     .*gps.*:
       name: lon
       data_converters:
@@ -66,21 +66,18 @@ data_vars:
   wave_spread:
     .*wave.*: 
       name: wave_spread
-  wave_energy_density:
+  wave_direction:
     .*wave.*: 
-      name: wave_energy_density
-  wave_a1_value:
-    .*wave.*: 
-      name: wave_a1_value
-  wave_b1_value:
-    .*wave.*: 
-      name: wave_b1_value
-  wave_a2_value:
-    .*wave.*: 
-      name: wave_a2_value
-  wave_b2_value:
-    .*wave.*: 
-      name: wave_b2_value
+      name: wave_direction
   wave_check_factor:
     .*wave.*: 
       name: wave_check_factor
+  wave_energy_density:
+    .*wave.*: 
+      name: wave_energy_density
+  wavelet_energy_density:
+    .*wave.*: 
+      name: wavelet_energy_density
+  wave_dir_energy_density:
+    .*wave.*: 
+      name: wave_dir_energy_density
