@@ -3,6 +3,43 @@ import xarray as xr
 import matplotlib.pyplot as plt
 
 
+def wave_spectra(dataset):
+    # Wave spectra figure
+    fig, ax = plt.subplots(figsize=(6, 5))
+    fig.subplots_adjust(left=0.14, right=0.95, top=0.95, bottom=0.1)
+
+    # Organize by wave height
+    hs_max = dataset["wave_hs"].max()
+    step = hs_max / 10
+    bins = np.arange(0, hs_max + step, step)
+    spec_U = (
+        dataset["wave_energy_density"]
+        .assign_coords({"time": dataset["wave_hs"].values})
+        .rename({"time": "height"})
+    )
+    grouped_spec = spec_U.groupby_bins("height", bins).mean()
+    # Create colormap
+    norm = plt.Normalize()
+    colors = plt.cm.turbo(norm(bins))
+    sm = plt.cm.ScalarMappable(cmap="turbo", norm=norm)
+
+    for i in range(len(bins) - 1):
+        ax.loglog(dataset["frequency"], grouped_spec[i], c=colors[i])
+    fig.colorbar(sm, ax=ax, label="Sig Wave Height [m]")
+    plt.grid()
+    m = -4
+    x = np.logspace(-1, 0)
+    y = 10 ** (-4) * x**m
+    ax.loglog(x, y, "--", c="black", label="f^-4")
+    ax.set(
+        ylim=(0.0005, 1),
+        xlabel="Frequency [Hz]",
+        ylabel="Energy Density [m^2/Hz]",
+    )
+
+    return fig, ax
+
+
 def directional_spectra(spectrum: xr.DataArray):
     # Plot Fourier directional spectra
     fig, ax = plt.subplots(

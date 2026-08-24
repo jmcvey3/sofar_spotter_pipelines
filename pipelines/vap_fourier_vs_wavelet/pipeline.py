@@ -7,7 +7,7 @@ import matplotlib.dates as mdates
 from cmocean.cm import amp_r, dense, haline
 
 from shared.wave_analysis import constants, wave_analysis
-from shared.plots import directional_spectra
+from shared.plots import wave_spectra, directional_spectra
 
 
 class VapWaves(TransformationPipeline):
@@ -65,24 +65,35 @@ class VapWaves(TransformationPipeline):
         plt.style.use("default")  # clear any styles that were set before
 
         # Wave spectra figure
+        fig, ax = wave_spectra(dataset)
+        plot_file = self.get_ancillary_filepath(title="elevation_spectra")
+        fig.savefig(plot_file)
+
+        # Comparison between mean PSD and wavelet spectra
         fig, ax = plt.subplots(figsize=(6, 6))
         fig.subplots_adjust(left=0.14, right=0.95, top=0.95, bottom=0.1)
-        for timestamp in dataset["time"]:
-            ax.loglog(
-                dataset["frequency"],
-                dataset["wave_energy_density"].sel(time=timestamp),
-                label="vertical",
-            )
+        ax.loglog(
+            dataset["frequency"],
+            dataset["wave_energy_density"].mean("time"),
+            label="Welch PSD",
+        )
+        ax.loglog(
+            dataset["frequency"],
+            dataset["wavelet_energy_density"].mean("time"),
+            label="Morlet Wavelet",
+        )
         m = -4
         x = np.logspace(-1, 0)
         y = 10 ** (-4) * x**m
         ax.loglog(x, y, "--", c="black", label="f^-4")
         ax.set(
-            ylim=(0.0001, 10),
+            ylim=(0.0005, 1),
             xlabel="Frequency [Hz]",
             ylabel="Energy Density [m^2/Hz]",
         )
-        plot_file = self.get_ancillary_filepath(title="elevation_spectrum")
+        ax.grid()
+        ax.legend()
+        plot_file = self.get_ancillary_filepath(title="mean_spectrum_comparison")
         fig.savefig(plot_file)
 
         # Wave time-series figure
