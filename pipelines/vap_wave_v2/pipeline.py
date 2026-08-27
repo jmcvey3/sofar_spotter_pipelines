@@ -55,6 +55,13 @@ class VapWaveStats(TransformationPipeline):
             "XXXXX", spotter_id
         )
 
+        # Trim down other time variables
+        time_coords = [t for t in dataset.coords if "time" in dataset[t].name]
+        t0 = dataset["time"][0].values
+        t1 = dataset["time"][-1].values
+        time_slice = dict.fromkeys(time_coords, slice(t0, t1))
+        dataset = dataset.sel(time_slice)
+
         ds = wave_analysis(dataset)
         # Create directional spectra from Welch-PSD and wavelet-determined directions
         ds["wave_dir_energy_density"].values = (

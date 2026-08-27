@@ -52,22 +52,6 @@
             ]
         },
         {
-            "name": "Debug VAP2",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}//runner.py",
-            "justMyCode": false,
-            "console": "integratedTerminal",
-            "args": [
-                "vap",
-                "pipelines/vap_wave_stats_v1/config/pipeline.yaml",
-                "--begin",
-                "20210903.000000",
-                "--end",
-                "20210904.000000"
-            ]
-        },
-        {
             "name": "Debug VAP V2",
             "type": "debugpy",
             "request": "launch",
@@ -84,7 +68,7 @@
             ]
         },
         {
-            "name": "Debug VAP Again",
+            "name": "Debug VAP V3",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}//runner.py",
@@ -92,11 +76,11 @@
             "console": "integratedTerminal",
             "args": [
                 "vap",
-                "pipelines/vap_wave_v2/config/pipeline.yaml",
+                "pipelines/vap_wave_v3/config/pipeline.yaml",
                 "--begin",
-                "20250709.181000",
+                "20240311.221600",
                 "--end",
-                "20250709.190000"
+                "20240311.224700"
             ]
         },
     ]

@@ -4,9 +4,12 @@ Data pipeline that reads in files that output by the `spotter_v2` ingest pipelin
 wave parameters from the input data, copies over the metocean variables, and creates plots of
 the final wave products
 
-One will need to adjust attributes in the dataset.yaml file to save and plot the correct 
-metadata. If there are multiple input files coming into this pipeline, you may need to adjust the 
-"time_padding" parameter in retriever.yaml depending on difference in file timestamps.
+Items to verify:
+ - Make sure the correct spotter dataastream is set in `vap_wave_v2/config/pipeline.yaml`
+ - Make sure the "begin" and "end" timestamps are sequential and exist in the `a1` datastream being run
+ - Make sure to adjust the constants dictionary in `shared/wave_analysis.py`
+ - Make sure QC values in `vap_wave_v2/config/dataset.yaml` are in the expected range
+ - Make sure the `time_padding` parameter in retriever.yaml is enough to cover the time difference between your start time and the time in the `a1` filename
 
 ## Prerequisites
 

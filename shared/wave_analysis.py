@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+from scipy import stats
 import pycwt
 from mhkit import wave, dolfyn
 
@@ -18,6 +19,8 @@ constants = dict(
 def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False):
     # Fill small gaps so we can calculate a wave spectrum
     for key in ["x", "y", "z"]:
+        if not dataset[key].size:
+            raise ValueError(f"dataset[{key}] is empty")
         dataset[key] = dataset[key].interpolate_na(
             dim="time", method="linear", max_gap=np.timedelta64(5, "s")
         )
@@ -87,7 +90,7 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
     # Find angles
     theta_mean = np.rad2deg(np.arctan2(b1_int, a1_int))
     phi_mean = np.rad2deg(np.sqrt(2 * (1 - np.sqrt(a1_int**2 + b1_int**2))))
-    # degrees CW from North ("from" convention)
+    # convert "degrees CCW from East" ("to" convention) to "degrees CW from North" ("from" convention)
     dir_mean = (270 - theta_mean) % 360
     # Set direction from -180 to 180
     dir_mean[dir_mean > 180] -= 360
@@ -132,6 +135,9 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
     w0 = 6  # According to Farge (1992), a commonly used value for the Morlet wavelet.
     mother = pycwt.Morlet(w0)
     freq_target = psd["freq"].values
+    # Remove NaN values
+    mask = disp.isnull()
+    disp = disp.fillna(0)
     # Wavelet analysis
     Wx_values, _, freq_out, _, _, _ = pycwt.cwt(
         disp[0].values, 1 / constants["fs"], wavelet=mother, freqs=freq_target
@@ -158,6 +164,11 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
         coords={"freq": freq_out, "time": dataset["time"].values},
         dims=["freq", "time"],
     )
+    # Remask data
+    Wx = Wx.where(~mask[0].values)
+    Wy = Wy.where(~mask[1].values)
+    Wz = Wz.where(~mask[2].values)
+
     # pycwt.cwt implements the exact discrete Torrence & Compo (1998)
     # normalization, so |W|^2 is directly comparable (shape and magnitude)
     # to the Fourier PSD (m^2/Hz)
@@ -166,21 +177,25 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
     # Cross wavelet transform: magnitude gives cross-wavelet power, angle gives relative phase
     Wyz = Wy * np.conj(Wz)
     Wxz = Wx * np.conj(Wz)
-    # Find wave direction matrix and convert from "CCW from E" to "CW from N"
+    # Find wave direction matrix and convert from "CCW from E" ("from" convention) to "CW from N" ("to" convention)
     direction_cwt = (270 - np.rad2deg(np.arctan2(Wyz.real, Wxz.real))) % 360
     # Set to +/-180 degrees
     direction_cwt = ((direction_cwt + 180) % 360) - 180
 
     # Bin-average wavelet-based parameters to reduce noise
     step = int((1 - constants["pct_overlap"]) * fft_tool.n_bin)
-    direction_cwt_avg = fft_tool.mean(direction_cwt, axis=-1, step=step)
     Wzz_psd_avg = fft_tool.mean(Wzz_psd, axis=-1, step=step)
 
+    # Average wave direction
+    direction_cwt_reshaped = fft_tool.reshape(direction_cwt, step=step)
+    direction_cwt_avg = stats.circmean(
+        direction_cwt_reshaped, low=-180, high=180, axis=-1
+    )
+
     ## Directional distribution function
-    # Histogram of direction within each cwt_tool time bin
-    # (same windows as Wzz_psd_cwt/D_cwt above), normalized so
-    # it integrates to 1 over direction, for each time/frequency
-    # This is an empirical (non-parametric) estimate
+    # Histogram of direction within each cwt_tool time bin (same windows as
+    # Wzz_psd_cwt/D_cwt above), normalized so it integrates to 1 over direction,
+    # for each time/frequency. This is an empirical (non-parametric) estimate
     def _hist_per_freq(x, bins):
         x = x[~np.isnan(x)]
         if x.size == 0:
@@ -224,6 +239,10 @@ def wave_analysis(dataset, wavelet_basic_stats=False, directional_spectra=False)
         coords={"time": psd["time_psd"].values},
         attrs=dataset["time"].attrs,
     )
+    if time.size < 2:
+        raise AssertionError(
+            "Stastical data is less than length 2. Please decrease 'wat' parameter in `shared/wave_analysis.py`"
+        )
 
     ds = ds.assign_coords({"time": time})
     # Make sure mhkit vars are set to float32

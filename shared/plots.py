@@ -48,8 +48,6 @@ def directional_spectra(spectrum: xr.DataArray):
     )
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
-    # Use frequencies up to 0.5 Hz
-    # spectrum = dataset["wave_dir_energy_density"].mean("time")
     # Create grid and plot
     a, f = np.meshgrid(np.deg2rad(spectrum["direction"]), 1 / spectrum["frequency"])
     color_level_max = np.nanmax(spectrum.values)
@@ -57,7 +55,7 @@ def directional_spectra(spectrum: xr.DataArray):
     c = ax.contourf(a, f, spectrum, levels=levels, cmap="Blues")
     cbar = plt.colorbar(c)
     cbar.set_label(r"ESD [m$^2$s/deg]", labelpad=20)
-    ax.set_ylim(2, 12)
+    ax.set_ylim(2, 12)  # Min and max wave period to plot, in s
     ylabels = ax.get_yticklabels()
     ylabels = [ilabel.get_text() for ilabel in ax.get_yticklabels()]
     ylabels = [ilabel + " s" for ilabel in ylabels]
@@ -73,7 +71,7 @@ def wavelets(dataset):
     fig, ax = plt.subplots(
         figsize=(10, 5), subplot_kw={"yscale": "log"}, constrained_layout=True
     )
-    vmax = 0.35
+    vmax = np.nanmax(dataset["wavelet_energy_density"])
     pcm = ax.pcolormesh(
         dataset["time"].values,
         dataset["frequency"].values,
@@ -92,9 +90,10 @@ def wavelets(dataset):
     time_grid, freq_grid = np.meshgrid(
         dataset["time"].values, dataset["frequency"].values
     )
-    step_t, step_f = 10, 5  # subsample to avoid a cluttered quiver
+    # subsample to avoid a cluttered quiver
+    step_t, step_f = (2, 5)
     energy = dataset["wavelet_energy_density"].T.values[::step_f, ::step_t]
-    energy_thresh = 0.1 * vmax  # only show arrows above 10% of max energy shown
+    energy_thresh = 0.10 * vmax  # only show arrows above 10% of max energy shown
     qu_masked = np.where(energy >= energy_thresh, qu.values[::step_f, ::step_t], np.nan)
     qv_masked = np.where(energy >= energy_thresh, qv.values[::step_f, ::step_t], np.nan)
     ax.quiver(

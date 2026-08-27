@@ -1,7 +1,7 @@
 # VAP Fourier vs Wavelets Transformation Pipeline
 
 This VAP pipeline is used to compare the results of FFT/Welch-based spectral analysis vs Wavelet analysis.
-It is for documentation purposes.
+It is for documentation and testing purposes only.
 
 ## Complex Wavelets
 

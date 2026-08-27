@@ -6,6 +6,8 @@ GPS position, metocean variables, and battery/charge parameters. This pipeline i
 first version Spotter buoy, and is meant to be used in conjunction with the `vap_wave_v2` pipeline, which
 calculates the wave statistics.
 
+Note: It is expected that the zip folder is named `spot<id>.zip`, where `<id>` is the spotter number
+
 This pipeline functions better if one clears the SD card before starting a new 
 deployment; otherwise delete the old files before running this pipeline.
 

@@ -3,11 +3,14 @@
 Data pipeline for reading in zip folders from Sofar Spotter3 wave buoys. These buoys are the ones that
 also measure air temperature, humidity, and pressure in addition to sea surface temperature, buoy charge/power
 stats, and wave measurements. 
+
 It is set up to ingest a zip folder containing all of the files directly from a
 Spotter3's SD card. It reads the buoy motion, GPS position, metocean variables, and 
 battery/charge parameters from the version 3 Spotter buoy. It is not backwards compatible
 with the version 1 or 2 buoys. It is meant to be used in conjunction with the `vap_wave_v3` pipeline, which
 calculates the wave statistics.
+
+Note: It is expected that the zip folder is named `spot<id>.zip`, where `<id>` is the spotter number
 
 This pipeline functions better if one clears the SD card before starting a new 
 deployment; otherwise delete the old files before running this pipeline.

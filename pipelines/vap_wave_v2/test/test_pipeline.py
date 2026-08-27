@@ -24,12 +24,12 @@ def test_vap_wave_v2_pipeline():
 
     # Transformation pipelines require an input of [date.time, date.time] formatted as
     # YYYYMMDD.hhmmss. The start date is inclusive, the end date is exclusive.
-    run_dates = ["20250110.200000", "20250111.000000"]
+    run_dates = ["20250110.220000", "20250110.230000"]
     dataset = pipeline.run(run_dates)
 
     # You will need to create this file after running the data through the pipeline
     # OR: Delete this and perform sanity checks on the input data instead of comparing
     # with an expected output file
-    expected_file = "pipelines/vap_wave_v2/test/data/expected/pnnl.spotter-30857C.c1.20250110.201459.nc"
+    expected_file = "pipelines/vap_wave_v2/test/data/expected/pnnl.spotter-30857C.c1.20250110.221459.nc"
     expected: xr.Dataset = xr.open_dataset(expected_file)  # type: ignore
     assert_close(dataset, expected, check_attrs=False, atol=1e-4)
