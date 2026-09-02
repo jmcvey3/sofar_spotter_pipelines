@@ -1,10 +1,8 @@
 from pathlib import Path
-import pytest
 import xarray as xr
 from tsdat import assert_close, PipelineConfig, TransformationPipeline
 
 
-@pytest.mark.dependency(depends=["../../example_pipeline/test/test_pipeline.py"])
 def test_vap_gps_pipeline():
     # The transformation pipeline will likely depend on the output of an ingestion
     # pipeline. To account for this we first run the ingest to generate input data for

@@ -1,12 +1,8 @@
 from pathlib import Path
-import pytest
 import xarray as xr
 from tsdat import assert_close, PipelineConfig, TransformationPipeline
 
 
-@pytest.mark.dependency(
-    depends=["../../spotter_v2/test/test_spotter_v2_pipeline_extra_files.py"]
-)
 def test_vap_wave_v2_pipeline():
     # The transformation pipeline will likely depend on the output of an ingestion
     # pipeline. To account for this we first run the ingest to generate input data for
